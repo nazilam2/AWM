@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <title>Gas Station Search</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Find Nearby Gas Stations</h1>
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+
+        <h2>Results:</h2>
+        <ul class="list-group">
+            {% if results %}
+                {% for station in results %}
+                    <li class="list-group-item">
+                        <strong>{{ station.name|default:"Unnamed Station" }}</strong>
+                        <p>Address: {{ station.address|default:"Unknown Address" }}</p>
+                        <p>Coordinates: ({{ station.location.y }}, {{ station.location.x }})</p>
+                    </li>
+                {% endfor %}
+            {% else %}
+                <li class="list-group-item">No gas stations found nearby.</li>
+            {% endif %}
+        </ul>
+
+        <div id="map" style="height: 400px;"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([{{ user_location.0|default:"53.3498" }}, {{ user_location.1|default:"-6.2603" }}], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        {% if user_location %}
+            L.marker([{{ user_location.0 }}, {{ user_location.1 }}]).addTo(map)
+                .bindPopup("<b>Your Location</b>").openPopup();
+        {% endif %}
+
+        {% for station in results %}
+            L.marker([{{ station.location.y }}, {{ station.location.x }}]).addTo(map)
+                .bindPopup("<b>{{ station.name|default:'Unnamed Station' }}</b><br>{{ station.address|default:'Unknown Address' }}");
+        {% endfor %}
+    </script>
+    
+</body>
+</html> 
+
+
